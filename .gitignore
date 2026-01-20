@@ -53,3 +53,9 @@ dkms.conf
 
 # debug information files
 *.dwo
+
+# others
+.metadata
+board-game-timer-software/.settings/
+board-game-timer-software/Debug/
+
