@@ -23,11 +23,19 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
+#include "TM1637.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+tm1637_t tm1637 = {
+    .clk_port = TM1637_CLK_GPIO_Port,
+    .dio_port = TM1637_DIO_GPIO_Port,
+    .clk_pin  = TM1637_CLK_Pin,
+    .dio_pin  = TM1637_DIO_Pin,
+    .brightness = 2
+};
 
 /* USER CODE END PTD */
 
@@ -46,6 +54,7 @@
 /* USER CODE BEGIN PV */
 uint8_t i = 0;
 uint8_t MSG[35] = {'\0'};
+uint16_t current_seconds = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -56,7 +65,11 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void set_time(void)
+{
+	current_seconds = current_seconds +  5;
+	tm1637_update_time(&tm1637, current_seconds);
+}
 /* USER CODE END 0 */
 
 /**
@@ -90,6 +103,7 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
+  tm1637_init(&tm1637, 1);
 
   /* USER CODE END 2 */
 
@@ -100,10 +114,12 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	sprintf(MSG, "i = %d\r\n", i);
-	HAL_UART_Transmit(&huart2, MSG, sizeof(MSG), 100);
+	//sprintf(MSG, "i = %d\r\n", i);
+	//HAL_UART_Transmit(&huart2, MSG, sizeof(MSG), 100);
 	HAL_Delay(1000);
-	i++;
+	if (!current_seconds) continue;
+	current_seconds--;
+	tm1637_update_time(&tm1637, current_seconds);
 
   }
   /* USER CODE END 3 */
@@ -175,6 +191,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t gpio_pin)
 {
     if (gpio_pin == ENCODER_Button_Pin)
     {
+    	set_time();
         HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
     }
 }

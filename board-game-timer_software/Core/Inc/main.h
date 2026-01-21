@@ -64,6 +64,10 @@ void Error_Handler(void);
 #define ENCODER_Button_Pin GPIO_PIN_4
 #define ENCODER_Button_GPIO_Port GPIOA
 #define ENCODER_Button_EXTI_IRQn EXTI4_IRQn
+#define TM1637_DIO_Pin GPIO_PIN_6
+#define TM1637_DIO_GPIO_Port GPIOA
+#define TM1637_CLK_Pin GPIO_PIN_7
+#define TM1637_CLK_GPIO_Port GPIOA
 #define SWDIO_Pin GPIO_PIN_13
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14
