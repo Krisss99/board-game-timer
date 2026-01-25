@@ -68,6 +68,10 @@ void Error_Handler(void);
 #define TM1637_DIO_GPIO_Port GPIOA
 #define TM1637_CLK_Pin GPIO_PIN_7
 #define TM1637_CLK_GPIO_Port GPIOA
+#define ENCODER_A_Pin GPIO_PIN_0
+#define ENCODER_A_GPIO_Port GPIOB
+#define ENCODER_B_Pin GPIO_PIN_1
+#define ENCODER_B_GPIO_Port GPIOB
 #define SWDIO_Pin GPIO_PIN_13
 #define SWDIO_GPIO_Port GPIOA
 #define SWCLK_Pin GPIO_PIN_14
@@ -76,6 +80,8 @@ void Error_Handler(void);
 #define VCP_RX_GPIO_Port GPIOA
 #define LD3_Pin GPIO_PIN_3
 #define LD3_GPIO_Port GPIOB
+#define big_button_Pin GPIO_PIN_5
+#define big_button_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
