@@ -55,11 +55,11 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : ENCODER_Button_Pin */
-  GPIO_InitStruct.Pin = ENCODER_Button_Pin;
+  /*Configure GPIO pins : big_Button_Pin ENCODER_Button_Pin */
+  GPIO_InitStruct.Pin = big_Button_Pin|ENCODER_Button_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(ENCODER_Button_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : TM1637_DIO_Pin */
   GPIO_InitStruct.Pin = TM1637_DIO_Pin;
@@ -75,8 +75,8 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(TM1637_CLK_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : ENCODER_A_Pin ENCODER_B_Pin big_button_Pin */
-  GPIO_InitStruct.Pin = ENCODER_A_Pin|ENCODER_B_Pin|big_button_Pin;
+  /*Configure GPIO pins : ENCODER_A_Pin ENCODER_B_Pin */
+  GPIO_InitStruct.Pin = ENCODER_A_Pin|ENCODER_B_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -89,6 +89,9 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(LD3_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+
   HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 

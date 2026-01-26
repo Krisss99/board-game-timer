@@ -69,7 +69,7 @@ state_t current_state = PAUSED;
 /* USER CODE BEGIN PV */
 uint8_t i = 0;
 uint8_t MSG[35] = {'\0'};
-uint16_t current_seconds = 0;
+uint16_t current_seconds, set_seconds = 0;
 int8_t step;
 /* USER CODE END PV */
 
@@ -84,11 +84,12 @@ void SystemClock_Config(void);
 void set_time(int8_t side)
 {
 	if (side == 1) {
-		current_seconds = current_seconds +  5;
+		set_seconds = set_seconds +  5;
 	} else if (side == -1) {
-		if (!(current_seconds <= 5)) current_seconds = current_seconds - 5;
+		if (!(set_seconds < 5)) set_seconds = set_seconds - 5;
 	}
-	tm1637_update_time(&tm1637, current_seconds);
+	current_seconds = set_seconds;
+	tm1637_update_time(&tm1637, set_seconds);
 }
 /* USER CODE END 0 */
 
@@ -214,8 +215,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t gpio_pin)
 {
     if (gpio_pin == ENCODER_Button_Pin)
     {
-        HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
-        HAL_LPTIM_Counter_Stop_IT(&hlptim1);
+    	HAL_LPTIM_Counter_Stop_IT(&hlptim1);
+        //HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
         if (current_state == RUNNING) {
         	current_state = PAUSED;
         } else {
@@ -223,9 +224,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t gpio_pin)
         	current_state = RUNNING;
         }
 
-    } else if (gpio_pin == big_button_Pin) {
-    	__NOP();
-    	//reset timer, game goes on...
+    } else if (gpio_pin == big_Button_Pin) {
+    	HAL_LPTIM_Counter_Stop_IT(&hlptim1);
+    	current_seconds = set_seconds;
+    	tm1637_update_time(&tm1637, current_seconds);
+    	HAL_LPTIM_Counter_Start_IT(&hlptim1, 32767);
+    	current_state = RUNNING;
     }
 }
 
