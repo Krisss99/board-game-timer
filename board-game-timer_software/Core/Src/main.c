@@ -18,16 +18,39 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "lptim.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
+#include "TM1637.h"
+#include "encoder.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+tm1637_t tm1637 = {
+    .clk_port = TM1637_CLK_GPIO_Port,
+    .dio_port = TM1637_DIO_GPIO_Port,
+    .clk_pin  = TM1637_CLK_Pin,
+    .dio_pin  = TM1637_DIO_Pin,
+    .brightness = 2
+};
+
+encoder_t encoder = {
+	.port_A = ENCODER_A_GPIO_Port,
+	.pin_A  = ENCODER_A_Pin,			// CLK
+	.port_B = ENCODER_B_GPIO_Port,
+	.pin_B  = ENCODER_B_Pin				// DT
+};
+
+typedef enum state {
+	RUNNING, PAUSED
+} state_t;
+
+state_t current_state = PAUSED;
 
 /* USER CODE END PTD */
 
@@ -46,6 +69,8 @@
 /* USER CODE BEGIN PV */
 uint8_t i = 0;
 uint8_t MSG[35] = {'\0'};
+uint16_t current_seconds, set_seconds = 0;
+int8_t step;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -56,7 +81,16 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void set_time(int8_t side)
+{
+	if (side == 1) {
+		set_seconds = set_seconds +  5;
+	} else if (side == -1) {
+		if (!(set_seconds < 5)) set_seconds = set_seconds - 5;
+	}
+	current_seconds = set_seconds;
+	tm1637_update_time(&tm1637, set_seconds);
+}
 /* USER CODE END 0 */
 
 /**
@@ -67,7 +101,6 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -89,7 +122,11 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
+  MX_LPTIM1_Init();
   /* USER CODE BEGIN 2 */
+  encoder_init(&encoder);
+  tm1637_init(&tm1637, 0);
+  //HAL_LPTIM_TimeOut_Start_IT(&hlptim1, 32767, 32767);
 
   /* USER CODE END 2 */
 
@@ -100,10 +137,13 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	sprintf(MSG, "i = %d\r\n", i);
-	HAL_UART_Transmit(&huart2, MSG, sizeof(MSG), 100);
-	HAL_Delay(1000);
-	i++;
+	if (current_state == PAUSED) {
+		step = encoder_step(&encoder);
+		//printf("%d\n\r", step);
+		set_time(step);
+		HAL_Delay(30);
+	}
+
 
   }
   /* USER CODE END 3 */
@@ -175,9 +215,34 @@ void HAL_GPIO_EXTI_Callback(uint16_t gpio_pin)
 {
     if (gpio_pin == ENCODER_Button_Pin)
     {
-        HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+    	HAL_LPTIM_Counter_Stop_IT(&hlptim1);
+        //HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
+        if (current_state == RUNNING) {
+        	current_state = PAUSED;
+        } else {
+        	HAL_LPTIM_Counter_Start_IT(&hlptim1, 32767);
+        	current_state = RUNNING;
+        }
+
+    } else if (gpio_pin == big_Button_Pin) {
+    	HAL_LPTIM_Counter_Stop_IT(&hlptim1);
+    	current_seconds = set_seconds;
+    	tm1637_update_time(&tm1637, current_seconds);
+    	HAL_LPTIM_Counter_Start_IT(&hlptim1, 32767);
+    	current_state = RUNNING;
     }
 }
+
+void HAL_LPTIM_AutoReloadMatchCallback(LPTIM_HandleTypeDef *lptim)
+{
+	if (lptim->Instance == LPTIM1)
+	{
+		if (current_seconds) current_seconds--;
+		tm1637_update_time(&tm1637, current_seconds);
+	}
+}
+
+
 
 /* USER CODE END 4 */
 
