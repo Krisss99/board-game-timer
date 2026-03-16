@@ -68,7 +68,6 @@ state_t current_state = PAUSED;
 
 /* USER CODE BEGIN PV */
 uint8_t i = 0;
-uint8_t MSG[35] = {'\0'};
 uint16_t current_seconds, set_seconds = 0;
 int8_t step;
 /* USER CODE END PV */
@@ -126,7 +125,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
   encoder_init(&encoder);
   tm1637_init(&tm1637, 0);
-  //HAL_LPTIM_TimeOut_Start_IT(&hlptim1, 32767, 32767);
 
   /* USER CODE END 2 */
 
@@ -139,12 +137,9 @@ int main(void)
     /* USER CODE BEGIN 3 */
 	if (current_state == PAUSED) {
 		step = encoder_step(&encoder);
-		//printf("%d\n\r", step);
 		set_time(step);
-		HAL_Delay(30);
+		HAL_Delay(10);
 	}
-
-
   }
   /* USER CODE END 3 */
 }
@@ -216,7 +211,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t gpio_pin)
     if (gpio_pin == ENCODER_Button_Pin)
     {
     	HAL_LPTIM_Counter_Stop_IT(&hlptim1);
-        //HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
         if (current_state == RUNNING) {
         	current_state = PAUSED;
         } else {
