@@ -33,7 +33,8 @@
 #define NUMBER_7		0x07
 #define NUMBER_8		0x7F
 #define NUMBER_9		0x6F
-#define DASH			0x40
+#define DASH			  0x40
+#define COLON			  0x80	// connected to DIGIT1
 
 
 /** Private Function Definitions ------------------------------------------------*/
@@ -120,19 +121,25 @@ int tm1637_update_time(tm1637_t *p, uint16_t seconds)
 	{
 		uint8_t hex;
 		switch(digits[i]) {
-		case 0: hex = NUMBER_0; break;
-		case 1: hex = NUMBER_1; break;
-		case 2: hex = NUMBER_2; break;
-		case 3: hex = NUMBER_3; break;
-		case 4: hex = NUMBER_4; break;
-		case 5: hex = NUMBER_5; break;
-		case 6: hex = NUMBER_6; break;
-		case 7: hex = NUMBER_7; break;
-		case 8: hex = NUMBER_8; break;
-		case 9: hex = NUMBER_9; break;
-		default: hex = 0xFF; break;
+			case 0: hex = NUMBER_0; break;
+			case 1: hex = NUMBER_1; break;
+			case 2: hex = NUMBER_2; break;
+			case 3: hex = NUMBER_3; break;
+			case 4: hex = NUMBER_4; break;
+			case 5: hex = NUMBER_5; break;
+			case 6: hex = NUMBER_6; break;
+			case 7: hex = NUMBER_7; break;
+			case 8: hex = NUMBER_8; break;
+			case 9: hex = NUMBER_9; break;
+			default: hex = 0xFF; break;
 		}
-		write_data(p, hex);;
+		if (i == 1 && p->colon_on == 1) {
+			write_data(p, hex | COLON);
+		}
+		else {
+			write_data(p, hex);
+		}
+
 	}
 
 	stop_communication(p);
