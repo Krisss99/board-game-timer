@@ -26,6 +26,7 @@ typedef struct tm1637_t {
 	uint16_t clk_pin;
 	uint16_t dio_pin;
 	uint8_t brightness;
+	uint8_t colon_on;
 } tm1637_t;
 
 /* Initialization of the display with all zeros,
