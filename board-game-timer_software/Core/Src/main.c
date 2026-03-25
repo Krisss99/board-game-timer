@@ -36,7 +36,8 @@ tm1637_t tm1637 = {
     .dio_port = TM1637_DIO_GPIO_Port,
     .clk_pin  = TM1637_CLK_Pin,
     .dio_pin  = TM1637_DIO_Pin,
-    .brightness = 2
+    .brightness = 2,
+	.colon_on = 1
 };
 
 encoder_t encoder = {

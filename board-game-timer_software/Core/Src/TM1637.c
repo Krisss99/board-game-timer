@@ -33,8 +33,8 @@
 #define NUMBER_7		0x07
 #define NUMBER_8		0x7F
 #define NUMBER_9		0x6F
-#define DASH			  0x40
-#define COLON			  0x80	// connected to DIGIT1
+#define DASH			0x40
+#define COLON			0x80	// connected to DIGIT1
 
 
 /** Private Function Definitions ------------------------------------------------*/
