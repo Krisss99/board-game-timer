@@ -19,7 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "lptim.h"
-#include "usart.h"
+#include "tim.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -70,6 +70,13 @@ state_t current_state = PAUSED;
 uint8_t i = 0;
 uint16_t current_seconds, set_seconds = 0;
 int8_t step;
+
+volatile uint8_t is_tm1637_on = 1;
+volatile uint8_t update_flag = 0;
+volatile uint8_t blink_flag = 0;
+volatile uint8_t encoder_btn_flag = 0;
+volatile uint8_t big_btn_flag = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -120,11 +127,12 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART2_UART_Init();
   MX_LPTIM1_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
   encoder_init(&encoder);
   tm1637_init(&tm1637, 0);
+  HAL_TIM_Base_Start_IT(&htim6);
 
   /* USER CODE END 2 */
 
@@ -135,10 +143,51 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+    if (encoder_btn_flag) {
+      encoder_btn_flag = 0;
+	  is_tm1637_on = 1;
+	  HAL_LPTIM_Counter_Stop_IT(&hlptim1);
+	  if (current_state == RUNNING) {
+	    current_state = PAUSED;
+	  } else {
+	    HAL_LPTIM_Counter_Start_IT(&hlptim1, 32767);
+	    current_state = RUNNING;
+	    tm1637_on(&tm1637, 7);
+	  }
+
+	} else if (big_btn_flag) {
+	  big_btn_flag = 0;
+	  HAL_LPTIM_Counter_Stop_IT(&hlptim1);
+	  current_seconds = set_seconds;
+	  tm1637_on(&tm1637, 7);
+	  tm1637_update_time(&tm1637, current_seconds);
+	  HAL_LPTIM_Counter_Start_IT(&hlptim1, 32767);
+	  current_state = RUNNING;
+	}
+
+
+
+	if (current_state == RUNNING && update_flag) {
+		update_flag = 0;
+		if (current_seconds) current_seconds--;
+		tm1637_update_time(&tm1637, current_seconds);
+	}
+
+    if (current_state == PAUSED && blink_flag) {
+      blink_flag = 0;
+      if (is_tm1637_on == 0) {
+	    is_tm1637_on = 1;
+        tm1637_update_time(&tm1637, current_seconds);
+        tm1637_on(&tm1637, 7);
+      } else {
+	    is_tm1637_on = 0;
+	    tm1637_off(&tm1637);
+      }
+    }
+
 	if (current_state == PAUSED) {
 		step = encoder_step(&encoder);
 		set_time(step);
-		HAL_Delay(10);
 	}
   }
   /* USER CODE END 3 */
@@ -208,32 +257,18 @@ void SystemClock_Config(void)
 
 void HAL_GPIO_EXTI_Callback(uint16_t gpio_pin)
 {
-    if (gpio_pin == ENCODER_Button_Pin)
-    {
-    	HAL_LPTIM_Counter_Stop_IT(&hlptim1);
-        if (current_state == RUNNING) {
-        	current_state = PAUSED;
-        } else {
-        	HAL_LPTIM_Counter_Start_IT(&hlptim1, 32767);
-        	current_state = RUNNING;
-        }
-
-    } else if (gpio_pin == big_Button_Pin) {
-    	HAL_LPTIM_Counter_Stop_IT(&hlptim1);
-    	current_seconds = set_seconds;
-    	tm1637_update_time(&tm1637, current_seconds);
-    	HAL_LPTIM_Counter_Start_IT(&hlptim1, 32767);
-    	current_state = RUNNING;
-    }
+  if (gpio_pin == ENCODER_Button_Pin) encoder_btn_flag = 1;
+  else if (gpio_pin == big_Button_Pin) big_btn_flag = 1;
 }
 
 void HAL_LPTIM_AutoReloadMatchCallback(LPTIM_HandleTypeDef *lptim)
 {
-	if (lptim->Instance == LPTIM1)
-	{
-		if (current_seconds) current_seconds--;
-		tm1637_update_time(&tm1637, current_seconds);
-	}
+  if (lptim->Instance == LPTIM1) update_flag = 1;
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  if (htim->Instance == TIM6) blink_flag = 1;
 }
 
 
