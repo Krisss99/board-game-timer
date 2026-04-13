@@ -37,9 +37,9 @@
         "other_text_thickness": 0.15,
         "other_text_upright": false,
         "pads": {
-          "drill": 3.5,
-          "height": 3.5,
-          "width": 3.5
+          "drill": 0.0,
+          "height": 0.62,
+          "width": 0.56
         },
         "silk_line_width": 0.1524,
         "silk_text_italic": false,
@@ -56,6 +56,11 @@
           "gap": 0.0,
           "via_gap": 0.0,
           "width": 0.0
+        },
+        {
+          "gap": 0.1,
+          "via_gap": 0.0,
+          "width": 0.2
         }
       ],
       "drc_exclusions": [],
@@ -135,10 +140,10 @@
         "min_silk_clearance": 0.0,
         "min_text_height": 0.8,
         "min_text_thickness": 0.08,
-        "min_through_hole_diameter": 0.3,
-        "min_track_width": 0.127,
+        "min_through_hole_diameter": 0.2,
+        "min_track_width": 0.0889,
         "min_via_annular_width": 0.1,
-        "min_via_diameter": 0.6,
+        "min_via_diameter": 0.45,
         "solder_mask_to_copper_clearance": 0.0,
         "use_height_for_length_calcs": true
       },
@@ -188,10 +193,8 @@
       ],
       "track_widths": [
         0.0,
-        0.15,
         0.2,
-        0.4,
-        0.6
+        0.4
       ],
       "tuning_pattern_settings": {
         "diff_pair_defaults": {
@@ -225,12 +228,16 @@
           "drill": 0.0
         },
         {
-          "diameter": 0.6,
-          "drill": 0.3
+          "diameter": 0.5,
+          "drill": 0.2
         },
         {
-          "diameter": 0.9,
-          "drill": 0.4
+          "diameter": 0.6,
+          "drill": 0.25
+        },
+        {
+          "diameter": 0.7,
+          "drill": 0.3
         }
       ],
       "zones_allow_external_fillets": false
@@ -494,9 +501,9 @@
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 2147483647,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
-        "track_width": 0.127,
-        "via_diameter": 0.6,
-        "via_drill": 0.3,
+        "track_width": 0.254,
+        "via_diameter": 0.6858,
+        "via_drill": 0.3302,
         "wire_width": 6
       }
     ],
@@ -588,6 +595,12 @@
         },
         {
           "group_by": false,
+          "label": "Sim.Pins",
+          "name": "Sim.Pins",
+          "show": false
+        },
+        {
+          "group_by": false,
           "label": "Description",
           "name": "Description",
           "show": false
@@ -656,7 +669,7 @@
   },
   "sheets": [
     [
-      "1bc8f4e9-4902-42d8-8a8d-506a107ca5bf",
+      "c0b80176-af5a-4b29-9e3d-11a58c300b7a",
       "Root"
     ]
   ],
