@@ -16,9 +16,9 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-#include "stm32l4xx.h"
+#include "stm32f0xx.h"
 
-#define DELAY_US		500
+#define DELAY_US		100
 
 typedef struct tm1637_t {
   GPIO_TypeDef *clk_port;
@@ -51,4 +51,3 @@ int tm1637_update_time(tm1637_t *p, uint16_t seconds);
 #endif
 
 #endif /* __TM1637_H */
-

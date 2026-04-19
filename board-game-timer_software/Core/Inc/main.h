@@ -27,7 +27,7 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32l4xx_hal.h"
+#include "stm32f0xx_hal.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -57,28 +57,16 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define MCO_Pin GPIO_PIN_0
-#define MCO_GPIO_Port GPIOA
-#define big_Button_Pin GPIO_PIN_3
-#define big_Button_GPIO_Port GPIOA
-#define big_Button_EXTI_IRQn EXTI3_IRQn
-#define ENCODER_Button_Pin GPIO_PIN_4
-#define ENCODER_Button_GPIO_Port GPIOA
-#define ENCODER_Button_EXTI_IRQn EXTI4_IRQn
-#define TM1637_DIO_Pin GPIO_PIN_6
-#define TM1637_DIO_GPIO_Port GPIOA
-#define TM1637_CLK_Pin GPIO_PIN_7
+#define TM1637_CLK_Pin GPIO_PIN_0
 #define TM1637_CLK_GPIO_Port GPIOA
-#define ENCODER_A_Pin GPIO_PIN_0
-#define ENCODER_A_GPIO_Port GPIOB
-#define ENCODER_B_Pin GPIO_PIN_1
-#define ENCODER_B_GPIO_Port GPIOB
-#define SWDIO_Pin GPIO_PIN_13
-#define SWDIO_GPIO_Port GPIOA
-#define SWCLK_Pin GPIO_PIN_14
-#define SWCLK_GPIO_Port GPIOA
-#define LD3_Pin GPIO_PIN_3
-#define LD3_GPIO_Port GPIOB
+#define TM1637_DIO_Pin GPIO_PIN_1
+#define TM1637_DIO_GPIO_Port GPIOA
+#define big_Button_Pin GPIO_PIN_2
+#define big_Button_GPIO_Port GPIOA
+#define big_Button_EXTI_IRQn EXTI2_3_IRQn
+#define ENCODER_Button_Pin GPIO_PIN_9
+#define ENCODER_Button_GPIO_Port GPIOA
+#define ENCODER_Button_EXTI_IRQn EXTI4_15_IRQn
 
 /* USER CODE BEGIN Private defines */
 
