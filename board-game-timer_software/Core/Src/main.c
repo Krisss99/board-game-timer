@@ -18,7 +18,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "lptim.h"
 #include "tim.h"
 #include "gpio.h"
 
@@ -26,7 +25,6 @@
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include "TM1637.h"
-#include "encoder.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -40,19 +38,11 @@ tm1637_t tm1637 = {
 	.colon_on = 1
 };
 
-encoder_t encoder = {
-	.port_A = ENCODER_A_GPIO_Port,
-	.pin_A  = ENCODER_A_Pin,			// CLK
-	.port_B = ENCODER_B_GPIO_Port,
-	.pin_B  = ENCODER_B_Pin				// DT
-};
-
 typedef enum state {
 	RUNNING, PAUSED
 } state_t;
 
 state_t current_state = PAUSED;
-
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -68,16 +58,15 @@ state_t current_state = PAUSED;
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t i = 0;
 uint16_t current_seconds, set_seconds = 0;
-int8_t step;
+int16_t current_encoder_pos, last_encoder_pos = 0, encoder_difference, accum = 0;
 
+// Flags
 volatile uint8_t is_tm1637_on = 1;
 volatile uint8_t update_flag = 0;
 volatile uint8_t blink_flag = 0;
 volatile uint8_t encoder_btn_flag = 0;
 volatile uint8_t big_btn_flag = 0;
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -88,13 +77,11 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void set_time(int8_t side)
+void set_time(int8_t steps)
 {
-	if (side == 1) {
-		set_seconds = set_seconds +  5;
-	} else if (side == -1) {
-		if (!(set_seconds < 5)) set_seconds = set_seconds - 5;
-	}
+	set_seconds += steps * 5;
+	if (set_seconds < 0) set_seconds = 0;
+
 	current_seconds = set_seconds;
 	tm1637_update_time(&tm1637, set_seconds);
 }
@@ -108,6 +95,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -128,13 +116,12 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_LPTIM1_Init();
-  MX_TIM6_Init();
+  MX_TIM14_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-  encoder_init(&encoder);
+ // encoder_init(&encoder);
   tm1637_init(&tm1637, 0);
-  HAL_TIM_Base_Start_IT(&htim6);
-
+  HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -146,49 +133,66 @@ int main(void)
     /* USER CODE BEGIN 3 */
     if (encoder_btn_flag) {
       encoder_btn_flag = 0;
-	  is_tm1637_on = 1;
-	  HAL_LPTIM_Counter_Stop_IT(&hlptim1);
+      is_tm1637_on = 1;
+	  HAL_TIM_Base_Stop_IT(&htim14);
 	  if (current_state == RUNNING) {
 	    current_state = PAUSED;
-	  } else {
-	    HAL_LPTIM_Counter_Start_IT(&hlptim1, 32767);
-	    current_state = RUNNING;
-	    tm1637_on(&tm1637, 7);
-	  }
+	    last_encoder_pos = (int16_t)__HAL_TIM_GET_COUNTER(&htim3);
+	    accum = 0;
 
+	  } else {
+		HAL_TIM_Base_Start_IT(&htim14);
+	  	current_state = RUNNING;
+	  	tm1637_on(&tm1637, 2);
+	  }
 	} else if (big_btn_flag) {
 	  big_btn_flag = 0;
-	  HAL_LPTIM_Counter_Stop_IT(&hlptim1);
+	  HAL_TIM_Base_Stop_IT(&htim14);
 	  current_seconds = set_seconds;
-	  tm1637_on(&tm1637, 7);
+	  tm1637_on(&tm1637, 2);
 	  tm1637_update_time(&tm1637, current_seconds);
-	  HAL_LPTIM_Counter_Start_IT(&hlptim1, 32767);
+	  HAL_TIM_Base_Start_IT(&htim14);
 	  current_state = RUNNING;
 	}
 
-
-
-	if (current_state == RUNNING && update_flag) {
-		update_flag = 0;
-		if (current_seconds) current_seconds--;
-		tm1637_update_time(&tm1637, current_seconds);
+    if (current_state == RUNNING && update_flag) {
+	  update_flag = 0;
+	  if (current_seconds) current_seconds--;
+	  tm1637_update_time(&tm1637, current_seconds);
 	}
 
-    if (current_state == PAUSED && blink_flag) {
-      blink_flag = 0;
-      if (is_tm1637_on == 0) {
+	if (current_state == PAUSED && blink_flag) {
+	  blink_flag = 0;
+	  if (is_tm1637_on == 0) {
 	    is_tm1637_on = 1;
-        tm1637_update_time(&tm1637, current_seconds);
-        tm1637_on(&tm1637, 7);
-      } else {
-	    is_tm1637_on = 0;
-	    tm1637_off(&tm1637);
-      }
-    }
+	    tm1637_update_time(&tm1637, current_seconds);
+	    tm1637_on(&tm1637, 2);
+	  } else {
+	  	is_tm1637_on = 0;
+	  	tm1637_off(&tm1637);
+	  }
+	}
 
 	if (current_state == PAUSED) {
-		step = encoder_step(&encoder);
-		set_time(step);
+	  current_encoder_pos = (int16_t)__HAL_TIM_GET_COUNTER(&htim3);
+	  encoder_difference = current_encoder_pos - last_encoder_pos;
+	  last_encoder_pos = current_encoder_pos;
+	  // Check for spike, strange behavior
+	  if (encoder_difference > 50 || encoder_difference < -50)
+		  encoder_difference = 0;
+	    accum += encoder_difference;
+	    while (accum >= 2)
+	    {
+	        set_time(+1);   // +5 seconds
+	        accum -= 2;
+	    }
+	    while (accum <= -2)
+	    {
+	    	if (current_seconds > 4) {
+	        set_time(-1);   // -5 seconds
+	    	}
+	    	accum += 2;
+	    }
 	}
   }
   /* USER CODE END 3 */
@@ -203,33 +207,13 @@ void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /** Configure the main internal regulator output voltage
-  */
-  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  /** Configure LSE Drive Capability
-  */
-  HAL_PWR_EnableBkUpAccess();
-  __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
-
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
-  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
-  RCC_OscInitStruct.MSIState = RCC_MSI_ON;
-  RCC_OscInitStruct.MSICalibrationValue = 0;
-  RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
-  RCC_OscInitStruct.PLL.PLLM = 1;
-  RCC_OscInitStruct.PLL.PLLN = 40;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
-  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
-  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -238,41 +222,29 @@ void SystemClock_Config(void)
   /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+                              |RCC_CLOCKTYPE_PCLK1;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
   {
     Error_Handler();
   }
-
-  /** Enable MSI Auto calibration
-  */
-  HAL_RCCEx_EnableMSIPLLMode();
 }
 
 /* USER CODE BEGIN 4 */
-
 void HAL_GPIO_EXTI_Callback(uint16_t gpio_pin)
 {
   if (gpio_pin == ENCODER_Button_Pin) encoder_btn_flag = 1;
-  else if (gpio_pin == big_Button_Pin) big_btn_flag = 1;
-}
-
-void HAL_LPTIM_AutoReloadMatchCallback(LPTIM_HandleTypeDef *lptim)
-{
-  if (lptim->Instance == LPTIM1) update_flag = 1;
+  if (gpio_pin == big_Button_Pin) big_btn_flag = 1;
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-  if (htim->Instance == TIM6) blink_flag = 1;
+  if (htim->Instance == TIM14) update_flag = 1;
+  //if (htim->Instance == TIM16) blink_flag = 1;
 }
-
-
 
 /* USER CODE END 4 */
 
